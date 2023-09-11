@@ -30,7 +30,7 @@ public class Main {
             var exec = Executors.newFixedThreadPool(options.getThreadsCount() == null ? 1 : options.getThreadsCount());
             try (var filesStream = Files.walk(pathToScan, options.getRecursionDepth())) {
                 var l = filesStream
-                        .filter(Files::isRegularFile)
+                        .filter(p -> !Files.isDirectory(p))
                         .filter(p -> {
                             var extension = getExtensionByStringHandling(p.getFileName().toString());
                             return (options.getExcludeExt() == null && options.getIncludeExt() == null) ||
@@ -54,11 +54,7 @@ public class Main {
             AtomicLong nonEmptyLinesCount = new AtomicLong(0L);
             AtomicLong commentLinesCount = new AtomicLong(0L);
             var extension = getExtensionByStringHandling(path.getFileName().toString());
-            var statsByExtension = STATISTICS.get(extension);
-            if (statsByExtension == null) {
-                statsByExtension = new ExtensionStats();
-                STATISTICS.put(extension, statsByExtension);
-            }
+            ExtensionStats statsByExtension = STATISTICS.computeIfAbsent(extension, (k) -> new ExtensionStats());
             statsByExtension.incQuantity();
             statsByExtension.addBytes(Files.size(path));
             lines.forEach(l -> {
